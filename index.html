@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="InstAnalyze: Instantly analyze images with AI in your browser! Free, fast, and powered by advanced machine learning.">
+  <title>InstAnalyze - Instant image labels</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1f2526, #2c3539);
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+      padding-bottom: 60px;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .app-container {
+      background: #2c3539;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      margin: 2rem auto;
+      position: relative;
+      height: fit-content;
+    }
+    h1 {
+      font-size: 2rem;
+      color: #e0e0e0;
+      margin-bottom: 0.5rem;
+    }
+    .app-description {
+      font-size: 0.9rem;
+      color: #b0b0b0;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+    .upload-area {
+      border: 2px dashed #5a6268;
+      padding: 2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #343d41;
+    }
+    .upload-area:hover:not(.disabled) {
+      border-color: #8a4af3;
+      background: #3e464a;
+    }
+    .upload-area.dragover:not(.disabled) {
+      border-color: #8a4af3;
+      background: #454d52;
+    }
+    .upload-area.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .upload-area p {
+      color: #b0b0b0;
+      margin: 0;
+    }
+    #imageInput {
+      display: none;
+    }
+    #preview {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-top: 1rem;
+      display: none;
+      border: 1px solid #5a6268;
+    }
+    #predictions {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0;
+      text-align: left;
+      font-size: 0.9rem;
+      color: #b0b0b0;
+    }
+    #predictions li {
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      display: block;
+      position: relative;
+    }
+    #predictions li span {
+      display: inline-block;
+      padding: 0.5rem;
+      border-radius: 5px;
+      position: relative;
+      z-index: 1;
+    }
+    #predictions li::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s ease;
+    }
+    .high-confidence::before {
+      background: #2e7d32;
+    }
+    .high-confidence span {
+      color: #c8e6c9;
+    }
+    .medium-confidence::before {
+      background: #f57c00;
+    }
+    .medium-confidence span {
+      color: #ffcc80;
+    }
+    .low-confidence::before {
+      background: #d32f2f;
+    }
+    .low-confidence span {
+      color: #ef9a9a;
+    }
+    .footer {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #a0a0a0;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+    .bottom-footer {
+      background: #1f2526;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #a0a0a0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+    }
+    .bottom-footer a {
+      color: #b388ff;
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .bottom-footer a:hover {
+      color: #9575cd;
+    }
+    .bottom-footer a:focus {
+      outline: 2px solid #b388ff;
+      outline-offset: 2px;
+    }
+    /* Spinner loader */
+    .loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      display: none;
+    }
+    .loader::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 4px solid #8a4af3;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>InstAnalyze</h1>
+    <div class="app-description">
+      Instantly analyze images with AI-powered classification, right in your browser.
+    </div>
+    <div class="upload-area disabled" id="uploadArea">
+      <p>Drop an image here or click to upload</p>
+      <input type="file" id="imageInput" accept="image/*" disabled>
+    </div>
+    <div class="loader" id="loader"></div>
+    <img id="preview" alt="Uploaded image preview">
+    <ul id="predictions"></ul>
+    <div class="footer">Powered by MobileNet v3</div>
+  </div>
+
+  <footer class="bottom-footer">
+    More mindblowing content at <a href="https://juho.page" target="_blank" rel="noopener noreferrer">juho.page</a>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest" defer></script>
+  <script src="script.js" defer></script>
+</body>
+</html>
